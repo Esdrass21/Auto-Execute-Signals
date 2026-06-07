@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Cryptonaute Engager — AI Trading Bot | Auto-Execute Signals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --purple: #a78bfa;
+    --purple-dark: #8b5cf6;
+    --purple-glow: rgba(139, 92, 246, 0.35);
+    --purple-light: #f5f0ff;
+    --purple-border: #c4b5fd;
+    --purple-dim: #a78bfa18;
+    --purple-border-dim: #a78bfa55;
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fc;
+    --text: #111111;
+    --text-muted: #4a4a5a;
+    --border: rgba(0, 0, 0, 0.08);
+    --border-hover: rgba(0, 0, 0, 0.15);
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 32px;
+    --transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0c12;
+      --bg-secondary: #15151f;
+      --text: #efeff5;
+      --text-muted: #a1a1b0;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.18);
+      --purple-light: #1e1a2e;
+      --purple-border: #7c3aed55;
+    }
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  /* FULL WIDTH CONTAINER */
+  .wrap {
+    max-width: 1400px;
+    width: 90%;
+    margin: 0 auto;
+    padding: 3rem 2rem 6rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Hero */
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 6vw, 5.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    max-width: 1100px;
+  }
+  .hero-title span {
+    background: linear-gradient(135deg, #c084fc, #a78bfa);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  .hero-sub {
+    font-size: 1.2rem;
+    max-width: 800px;
+    color: var(--text-muted);
+  }
+
+  /* Layout adjustments */
+  .compare, .features, .testimonials-grid {
+    gap: 24px;
+  }
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 2.5rem;
+  }
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    margin: 2rem 0 1.5rem;
+  }
+  @media (max-width: 760px) {
+    .compare { grid-template-columns: 1fr; }
+    .wrap { width: 95%; padding: 2rem 1.5rem 4rem; }
+  }
+
+  /* Falling words background (full screen, includes brand) */
+  .bg-matrix {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    font-family: 'Syne', monospace;
+    font-weight: 600;
+  }
+  .matrix-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .glow-spot {
+    position: fixed;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, var(--purple-glow) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+    filter: blur(80px);
+    transition: transform 0.1s ease;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(4px);
+    color: var(--purple);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border-radius: 60px;
+    border: 0.5px solid var(--purple-border-dim);
+    margin-bottom: 2rem;
+    transition: var(--transition);
+    cursor: pointer;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 2.5rem 0 3rem;
+  }
+
+  .btn-main, .btn-sec {
+    padding: 14px 32px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: var(--transition);
+    text-decoration: none;
+    border: none;
+    font-family: inherit;
+  }
+  .btn-main {
+    background: var(--purple);
+    color: #0e0e1a;
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
+  }
+  .btn-main:hover { transform: translateY(-3px); background: var(--purple-dark); box-shadow: 0 12px 25px rgba(139, 92, 246, 0.4); }
+  .btn-sec {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border-hover);
+  }
+  .btn-sec:hover { transform: translateY(-2px); background: var(--bg-secondary); border-color: var(--purple-border); }
+
+  hr.divider {
+    margin: 3rem 0;
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 0.75rem;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    color: var(--text);
+  }
+
+  /* Card designs - unified for features and pricing */
+  .feat-card, .pricing-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: var(--transition);
+  }
+  .feat-card:hover, .pricing-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--purple-border);
+    box-shadow: 0 20px 30px -12px rgba(0,0,0,0.1);
+    background: var(--bg-secondary);
+  }
+  .feat-icon {
+    font-size: 2rem;
+    color: var(--purple);
+    margin-bottom: 1rem;
+  }
+  .feat-title {
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+  .feat-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  /* Pricing specific inside card */
+  .price-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--purple);
+    margin-bottom: 0.5rem;
+  }
+  .price-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1.2rem;
+  }
+  .price-items {
+    list-style: none;
+    margin: 1rem 0;
+    display: grid;
+    gap: 8px;
+  }
+  .price-items li {
+    font-size: 0.85rem;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--text-muted);
+  }
+  .price-items li i {
+    color: var(--purple);
+  }
+  .pricing-card .btn-main {
+    margin-top: 1rem;
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+
+  /* Compare cards */
+  .cmp-card {
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+  .cmp-good {
+    border-left: 4px solid var(--purple);
+    background: var(--purple-light);
+  }
+  .cmp-header {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+  .cmp-item {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    color: var(--text-muted);
+  }
+
+  /* How it works */
+  .flow-step {
+    display: flex;
+    gap: 20px;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-num {
+    width: 40px;
+    height: 40px;
+    background: var(--purple-dim);
+    border-radius: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: var(--purple);
+    flex-shrink: 0;
+  }
+
+  /* Testimonials */
+  .testimonials-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin: 1.5rem 0;
+  }
+  .testimonial-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1.8rem;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+  }
+  .testimonial-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--purple-border);
+  }
+  .testimonial-stars {
+    color: #fbbf24;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    margin-bottom: 0.8rem;
+  }
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 0.8rem;
+  }
+  .author-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-size: 1rem;
+  }
+
+  /* FAQ accordion (restored) */
+  .faq-item {
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 0;
+  }
+  .faq-q {
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .faq-q i {
+    transition: transform 0.2s;
+  }
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, margin 0.2s;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+  .faq-item.active .faq-a {
+    max-height: 180px;
+    margin-top: 8px;
+  }
+  .faq-item.active .faq-q i {
+    transform: rotate(180deg);
+  }
+
+  .stat-badge {
+    display: flex;
+    gap: 24px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin: 1rem 0 2rem;
+  }
+  .stat-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 60px;
+    padding: 8px 24px;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .footer-cta {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    text-align: center;
+    margin-top: 3rem;
+  }
+  .partner-links {
+    margin: 1.5rem 0 1rem;
+    text-align: left;
+  }
+  .link-exness {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    padding: 8px 24px;
+    border-radius: 40px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    border: 0.5px solid var(--border);
+    transition: var(--transition);
+    color: var(--text);
+  }
+
+  .emoji-burst {
+    position: fixed;
+    pointer-events: none;
+    font-size: 28px;
+    z-index: 1000;
+    animation: burstFly 0.8s ease-out forwards;
+  }
+  @keyframes burstFly {
+    0% { transform: scale(0.5) translate(0, 0); opacity: 1; }
+    100% { transform: scale(1.5) translate(var(--tx, 40px), var(--ty, -80px)); opacity: 0; }
+  }
+  .floating-particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1;
+    font-size: 1.2rem;
+    animation: floatUp 4s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="glow-spot" id="glowSpot"></div>
+
+<!-- Falling words background (full screen, includes brand) -->
+<div class="bg-matrix">
+  <canvas id="matrixCanvas" class="matrix-canvas"></canvas>
+</div>
+
+<div class="wrap">
+  <div class="badge" id="dynamicBadge">
+    <i class="ti ti-robot"></i> <span id="badgeText">⚡ AI POWERED</span>
+  </div>
+
+  <h1 class="hero-title">Stop copying trades<br>manually. Let <span>AI</span> execute<br>in <span id="speedCounter">2.6</span> seconds ⚡</h1>
+
+  <p class="hero-sub" id="typewriterSub"></p>
+
+  <div class="cta-row">
+    <a href="https://esdrass21.github.io/CryptonauteEngager" class="btn-main" id="mainCta"><i class="ti ti-world"></i> Launch Dashboard</a>
+    <a href="https://t.me/CryptonauteEngager" class="btn-sec" id="teleCta"><i class="ti ti-brand-telegram"></i> Join Telegram</a>
+  </div>
+
+  <div class="stat-badge">
+    <div class="stat-item"><i class="ti ti-message-2"></i> Signals processed: <span id="signalCount">0</span></div>
+    <div class="stat-item"><i class="ti ti-clock"></i> Avg execution: <span id="avgExec">2.6s</span> 🚀</div>
+    <div class="stat-item"><i class="ti ti-chart-line"></i> Uptime: 99.98% 💪</div>
+  </div>
+
+  <div class="partner-links">
+    <a href="https://www.exnesspromo.com/en-global/trade-ambition/?partner_id=8849qnqcqy" target="_blank" rel="noopener noreferrer" class="link-exness">
+      <i class="ti ti-chart-line"></i> Trade with Exness (Low Spreads)
+    </a>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">⚠️ The problem</div>
+  <h2 class="section-title">Manual trade copying is slow, stressful, and error‑prone</h2>
+  <p class="section-body">You subscribe to a signal channel. A signal drops. You rush to open MT5, type the entry, SL, TP... and by the time you're done, the price has already moved. Or you're asleep. Or the format changed and you misread it.</p>
+
+  <div class="compare">
+    <div class="cmp-card cmp-bad">
+      <div class="cmp-header">😩 Without the bot</div>
+      <div class="cmp-item"><i class="ti ti-x"></i>Copy trades by hand, every time</div>
+      <div class="cmp-item"><i class="ti ti-x"></i>Miss signals while you sleep</div>
+      <div class="cmp-item"><i class="ti ti-x"></i>Break when signal format changes</div>
+      <div class="cmp-item"><i class="ti ti-x"></i>Slow execution — price moves first</div>
+      <div class="cmp-item"><i class="ti ti-x"></i>Existing tools cost $50–$200/month</div>
+    </div>
+    <div class="cmp-card cmp-good" id="aiAdvantageCard">
+      <div class="cmp-header">🤖 With Cryptonaute Engager</div>
+      <div class="cmp-item"><i class="ti ti-check"></i>Trades placed automatically</div>
+      <div class="cmp-item"><i class="ti ti-check"></i>Runs 24/7, never misses a signal</div>
+      <div class="cmp-item"><i class="ti ti-check"></i>AI reads any signal format</div>
+      <div class="cmp-item"><i class="ti ti-check"></i>Under 3 seconds ⚡ from signal to trade</div>
+      <div class="cmp-item"><i class="ti ti-check"></i>One‑time setup, yours to keep</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">✨ Intelligent Features</div>
+  <h2 class="section-title">Everything a serious trader needs + fun!</h2>
+  <div class="features">
+    <div class="feat-card"><div class="feat-icon"><i class="ti ti-brain"></i></div><div class="feat-title">Mistral AI parser</div><div class="feat-desc">Reads any signal format like a human. 🤯</div></div>
+    <div class="feat-card"><div class="feat-icon"><i class="ti ti-arrows-split"></i></div><div class="feat-title">Multi‑TP splitting</div><div class="feat-desc">Splits your lot across TP1, TP2, TP3 🎯</div></div>
+    <div class="feat-card"><div class="feat-icon"><i class="ti ti-chart-candle"></i></div><div class="feat-title">All 6 order types</div><div class="feat-desc">Market, limit, stop — handles everything 📈</div></div>
+    <div class="feat-card"><div class="feat-icon"><i class="ti ti-dashboard"></i></div><div class="feat-title">Live dashboard</div><div class="feat-desc">See positions, P&L, signals in real‑time 🖥️</div></div>
+    <div class="feat-card"><div class="feat-icon"><i class="ti ti-lock"></i></div><div class="feat-title">Private channels</div><div class="feat-desc">Works with any VIP group 🔒</div></div>
+    <div class="feat-card"><div class="feat-icon"><i class="ti ti-file-text"></i></div><div class="feat-title">Full trade log</div><div class="feat-desc">JSON export, review history 📜</div></div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">⚙️ How it works</div>
+  <h2 class="section-title">From signal to filled order in under 3 seconds</h2>
+  <div class="flow">
+    <div class="flow-step"><div class="step-num">1</div><div class="step-text"><strong>Signal drops in your Telegram channel</strong> — Engager is already watching 👀</div></div>
+    <div class="flow-step"><div class="step-num">2</div><div class="step-text"><strong>Mistral AI reads the message</strong> — extracts direction, entry, SL, TP 🤖</div></div>
+    <div class="flow-step"><div class="step-num">3</div><div class="step-text"><strong>Not a real signal?</strong> — commentary skipped automatically 🧠</div></div>
+    <div class="flow-step"><div class="step-num">4</div><div class="step-text"><strong>MetaTrader 5 places the trade</strong> — lot splits, SL set, logged ✅</div></div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">💰 Pricing & ownership</div>
+  <h2 class="section-title">One setup. Yours to keep. Forever.</h2>
+  
+  <!-- Pricing card now uses the same design as feature cards -->
+  <div class="pricing-card">
+    <div class="price-amount">Contact us <span style="font-size:1rem;">for custom quote 🎁</span></div>
+    <p class="price-desc">Full bot setup, configured for your broker and your signal channel.</p>
+    <ul class="price-items">
+      <li><i class="ti ti-check"></i> Complete source code — you own it</li>
+      <li><i class="ti ti-check"></i> Custom configuration for your MT5 account</li>
+      <li><i class="ti ti-check"></i> Works with any Gold/XAUUSD signal channel</li>
+      <li><i class="ti ti-check"></i> Step‑by‑step setup walkthrough</li>
+      <li><i class="ti ti-check"></i> Private & VIP channel support</li>
+      <li><i class="ti ti-check"></i> After‑sale support included</li>
+    </ul>
+    <a href="https://esdrass21.github.io/CryptonauteEngager" class="btn-main"><i class="ti ti-world"></i> Get started now 🚀</a>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">💬 Social proof</div>
+  <h2 class="section-title">Trusted by active traders <span>😎</span></h2>
+  <div class="testimonials-grid">
+    <div class="testimonial-card">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">“I was manually copying trades for 6 months. Missed so many entries while sleeping. Since using this bot I haven't missed a single signal. It just works.”</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">GS</div>
+        <div class="author-info"><span class="author-name">Gold Signals Trader</span> • 2 months using the bot</div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">“The AI part is what makes it different. My signal provider changes format all the time. Every other copier I tried broke within a week. This one never does.”</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">FT</div>
+        <div class="author-info"><span class="author-name">Forex Trader</span> • XAUUSD focus</div>
+      </div>
+    </div>
+    <div class="testimonial-card" id="dynamicTestimonial">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-text">“I set it up in 20 minutes. Now the bot executes every gold signal while I sleep. Best $ spent on automation.”</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">DT</div>
+        <div class="author-info"><span class="author-name">Day Trader</span> • 3 weeks live</div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center; margin: 1rem 0">
+    <button id="randomTestimonialBtn" class="btn-sec" style="padding:8px 24px;"><i class="ti ti-refresh"></i> ✨ See more stories ✨</button>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">❓ FAQ</div>
+  <h2 class="section-title">Common questions 🙋</h2>
+  <div id="faqList">
+    <div class="faq-item"><div class="faq-q">Does it work with my broker? <i class="ti ti-chevron-down"></i></div><p class="faq-a">If your broker supports MetaTrader 5 and trades Gold (XAUUSD), yes. Works with XM, IC Markets, Exness, Pepperstone, FP Markets, and most others.</p></div>
+    <div class="faq-item"><div class="faq-q">Does it work with private/VIP Telegram channels? <i class="ti ti-chevron-down"></i></div><p class="faq-a">Yes. It uses your real Telegram account (not a bot token), so it has access to every channel you're subscribed to — including paid and private ones.</p></div>
+    <div class="faq-item"><div class="faq-q">What if my signal format is unusual? <i class="ti ti-chevron-down"></i></div><p class="faq-a">Mistral AI reads signals the way a human would. As long as the message contains a clear buy/sell instruction with price levels, it will parse it correctly — no matter the format.</p></div>
+    <div class="faq-item"><div class="faq-q">Is my Telegram account safe? <i class="ti ti-chevron-down"></i></div><p class="faq-a">The bot only reads messages from the channel you configure. It never sends messages, never accesses other chats. Your session file stays on your own computer.</p></div>
+    <div class="faq-item"><div class="faq-q">Do I need coding experience? <i class="ti ti-chevron-down"></i></div><p class="faq-a">No. Setup takes about 15 minutes. You fill in a simple config file with your credentials and run one command. Full step-by-step guide included.</p></div>
+  </div>
+
+  <div class="footer-cta">
+    <h3>Ready to automate your trading? 🚀</h3>
+    <p>Never miss a signal again. Trades placed in under 3 seconds, 24/7.</p>
+    <div class="footer-btns" style="margin-top:1.5rem;">
+      <a href="https://esdrass21.github.io/CryptonauteEngager" class="btn-main"><i class="ti ti-world"></i> Our website 🌟</a>
+      <a href="https://t.me/CryptonauteEngager" class="btn-sec"><i class="ti ti-brand-telegram"></i> Join on Telegram 🎉</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // Falling words background (full screen, includes CRYPTONAUTE & ENGAGER)
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+    const wordBank = [
+      "FOREX", "XAUUSD", "GOLD", "BUY", "SELL", "PROFIT", "TREND", "ANALYSIS",
+      "BREAKOUT", "MOMENTUM", "DISCIPLINE", "FOCUS", "WIN", "SUCCESS", "RISK",
+      "MANAGEMENT", "LIQUIDITY", "VOLATILITY", "SWING", "SCALP", "POSITION",
+      "LEVERAGE", "MARGIN", "STOP LOSS", "TAKE PROFIT", "CONFIDENCE", "MINDSET",
+      "CRYPTONAUTE", "ENGAGER", "CRYPTONAUTE ENGAGER"
+    ];
+    let width, height, fontSize = 16, drops = [];
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      fontSize = Math.max(13, Math.floor(width / 55));
+      const cols = Math.floor(width / (fontSize * 2.6));
+      drops = [];
+      for (let i = 0; i < cols; i++) {
+        drops.push({
+          y: Math.random() * -height,
+          word: wordBank[Math.floor(Math.random() * wordBank.length)],
+          speed: 0.5 + Math.random() * 1.8,
+          x: i * (fontSize * 2.6)
+        });
+      }
+    }
+    function draw() {
+      if (!ctx) return;
+      ctx.fillStyle = 'rgba(245, 240, 255, 0.06)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.font = `${fontSize}px 'Syne', monospace`;
+      for (let d of drops) {
+        const opacity = Math.min(0.3, 0.08 + (Math.abs(d.y) / height) * 0.2);
+        ctx.fillStyle = `rgba(139, 92, 246, ${opacity})`;
+        ctx.fillText(d.word, d.x, d.y);
+        d.y += d.speed;
+        if (d.y > height + 60) {
+          d.y = -40;
+          d.word = wordBank[Math.floor(Math.random() * wordBank.length)];
+          d.speed = 0.5 + Math.random() * 2.0;
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+    window.addEventListener('resize', () => { resizeCanvas(); });
+    resizeCanvas();
+    draw();
+
+    // Confetti & emoji bursts
+    const confettiFire = () => canvasConfetti({ particleCount: 120, spread: 70, origin: { y: 0.6 }, colors: ['#a78bfa', '#8b5cf6', '#c084fc'] });
+    const emojiBurst = (x, y, emoji = '🚀') => {
+      const el = document.createElement('div');
+      el.className = 'emoji-burst';
+      el.innerText = emoji;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.setProperty('--tx', (Math.random() - 0.5) * 100 + 'px');
+      el.style.setProperty('--ty', -Math.random() * 100 - 30 + 'px');
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 800);
+    };
+    document.querySelectorAll('.btn-main, .btn-sec, .link-exness').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        confettiFire();
+        const rect = btn.getBoundingClientRect();
+        emojiBurst(rect.left + rect.width/2, rect.top + rect.height/2, '⚡');
+      });
+    });
+
+    const glow = document.getElementById('glowSpot');
+    document.addEventListener('mousemove', (e) => {
+      if (glow) glow.style.transform = `translate(${e.clientX - 250}px, ${e.clientY - 250}px)`;
+    });
+
+    let signalCount = 1789;
+    const signalSpan = document.getElementById('signalCount');
+    const avgSpan = document.getElementById('avgExec');
+    const speedSpan = document.getElementById('speedCounter');
+    setInterval(() => {
+      signalCount += Math.floor(Math.random() * 5) + 2;
+      signalSpan.innerText = signalCount;
+      const avg = (2.0 + Math.random() * 0.9).toFixed(1);
+      avgSpan.innerText = avg + 's';
+      speedSpan.innerText = avg;
+    }, 5500);
+    setInterval(() => {
+      if (Math.random() > 0.7) {
+        const fake = (1.8 + Math.random() * 1.2).toFixed(1);
+        avgSpan.innerText = fake + 's';
+        speedSpan.innerText = fake;
+        setTimeout(() => { avgSpan.innerText = "2.6s"; speedSpan.innerText = "2.6"; }, 1300);
+      }
+    }, 8000);
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-item').forEach(item => {
+      const q = item.querySelector('.faq-q');
+      q.addEventListener('click', () => item.classList.toggle('active'));
+    });
+
+    const testimonials = [
+      { text: "“I set it up in 20 minutes. Now the bot executes every gold signal while I sleep. Best $ spent on automation.”", author: "Day Trader", role: "3 weeks live", avatar: "DT" },
+      { text: "“The multi-TP splitting is insane. I don't have to calculate partials ever again.”", author: "Swing Trader", role: "XAUUSD focus", avatar: "ST" },
+      { text: "“Support was fast, bot runs flawless. My VIP group signals copied instantly.”", author: "Funded Prop Trader", role: "Verified", avatar: "FP" }
+    ];
+    const dynamicCard = document.getElementById('dynamicTestimonial');
+    const randomBtn = document.getElementById('randomTestimonialBtn');
+    if (randomBtn && dynamicCard) {
+      randomBtn.addEventListener('click', () => {
+        const r = Math.floor(Math.random() * testimonials.length);
+        const t = testimonials[r];
+        dynamicCard.querySelector('.testimonial-text').innerText = t.text;
+        dynamicCard.querySelector('.author-name').innerText = t.author;
+        dynamicCard.querySelector('.author-info').innerHTML = `<span class="author-name">${t.author}</span> • ${t.role}`;
+        dynamicCard.querySelector('.author-avatar').innerText = t.avatar;
+        confettiFire();
+      });
+    }
+
+    const badgeSpan = document.getElementById('badgeText');
+    const messages = ["🎉 AI MAGIC", "⚡ HYPERSPEED", "🤖 BOT ACTIVE", "💸 PROFIT MODE", "🚀 MOON READY"];
+    let mIdx = 0;
+    setInterval(() => {
+      mIdx = (mIdx + 1) % messages.length;
+      badgeSpan.innerText = messages[mIdx];
+    }, 2800);
+
+    setInterval(() => {
+      const p = document.createElement('div');
+      p.className = 'floating-particle';
+      p.innerText = ['🚀','💎','🤖','⚡','📈','💰'][Math.floor(Math.random()*6)];
+      p.style.left = Math.random() * window.innerWidth + 'px';
+      p.style.bottom = '0px';
+      p.style.fontSize = (Math.random() * 20 + 16) + 'px';
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 4000);
+    }, 3800);
+
+    document.querySelectorAll('.feat-card').forEach((card, i) => {
+      card.addEventListener('click', () => {
+        const titles = ['🧠 AI magic', '🎯 TP split', '📊 Order types', '📺 Dashboard', '🔒 Private', '📜 Trade log'];
+        const rect = card.getBoundingClientRect();
+        emojiBurst(rect.left + 50, rect.top + 30, '🎉');
+        const notif = document.createElement('div');
+        notif.innerText = `✨ ${titles[i]} activated! ✨`;
+        notif.style.position = 'fixed';
+        notif.style.bottom = '20px';
+        notif.style.left = '20px';
+        notif.style.backgroundColor = 'var(--purple)';
+        notif.style.color = '#0c0c14';
+        notif.style.padding = '8px 16px';
+        notif.style.borderRadius = '40px';
+        notif.style.fontWeight = 'bold';
+        notif.style.zIndex = '999';
+        notif.style.fontSize = '13px';
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 1800);
+      });
+    });
+
+    const advCard = document.getElementById('aiAdvantageCard');
+    if (advCard) {
+      advCard.addEventListener('click', () => {
+        const newSp = (1.6 + Math.random() * 0.9).toFixed(1);
+        avgSpan.innerText = newSp + 's';
+        speedSpan.innerText = newSp;
+        canvasConfetti({ particleCount: 60, spread: 45, origin: { y: 0.5 } });
+      });
+    }
+
+    signalSpan.innerText = "1789";
+    document.getElementById('typewriterSub').innerText = "";
+
+    const factDiv = document.createElement('div');
+    factDiv.style.textAlign = 'center';
+    factDiv.style.marginTop = '1.5rem';
+    factDiv.style.fontSize = '0.85rem';
+    factDiv.style.color = 'var(--text-muted)';
+    factDiv.innerHTML = '💡 <span id="funFact">Did you know? The bot processes a signal in ~2.5s on average.</span>';
+    document.querySelector('.footer-cta').after(factDiv);
+    const facts = [
+      "🤖 Mistral AI can read over 50 signal formats!",
+      "⚡ Trades execute faster than a human blink (300ms).",
+      "📈 98% of users never miss a signal again."
+    ];
+    let fIdx = 0;
+    setInterval(() => {
+      fIdx = (fIdx + 1) % facts.length;
+      document.getElementById('funFact').innerText = facts[fIdx];
+    }, 7000);
+  })();
+</script>
+</body>
+</html>
